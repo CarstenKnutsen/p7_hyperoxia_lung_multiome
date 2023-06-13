@@ -26,11 +26,6 @@ if __name__ == '__main__':
                                 )
     sc.pp.pca(adata, use_highly_variable=True)
     sc.pp.neighbors(adata)
-    # sce.pp.bbknn(adata,
-    #              batch_key='Mouse',
-    #              neighbors_within_batch=2,
-    #              set_op_mix_ratio=0.8)
-    # adata.uns['neighbors']['connectivities'] = adata.obsp['connectivities']
     sc.tl.umap(adata, min_dist=0.5)
     sc.tl.leiden(adata, resolution=0.0004, partition_type=la.CPMVertexPartition, key_added='leiden')
     print(len(adata.obs['leiden'].unique()))
@@ -38,7 +33,8 @@ if __name__ == '__main__':
     sc.pl.rank_genes_groups_dotplot(adata, groupby='leiden',
                                     n_genes=int(150 / len(adata.obs['leiden'].unique())), show=False,
                                     save=f'leiden_markers.png')
-    # adata = adata[~adata.obs['leiden'].isin(['11']),:] # Cluster 11 looks low quality
+    adata = adata[~adata.obs['leiden'].isin(['14']),:] # Cluster 14 looks low quality
+    sc.tl.umap(adata, min_dist=0.5)
     sc.pl.pca_overview(adata, color='leiden', show=False, save = True)
     sc.pl.pca_variance_ratio(adata, show = False, save ='variance_ratio')
     sc.pl.pca_loadings(adata, components = ','.join([str(x) for x in range(1,10)]), show = False, save = True)

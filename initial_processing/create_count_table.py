@@ -17,7 +17,7 @@ os.makedirs(qc, exist_ok=True)
 
 if __name__ == '__main__':
     var = pd.read_csv(
-        '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/outs/filtered_feature_bc_matrix/features.tsv',
+        '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/cellranger_output/230609_aggregate/outs/filtered_feature_bc_matrix/features.tsv.gz',
         header=None,sep = '\t', index_col=None)
     var.columns = ['gene_id','gene_name_feature','measure','seqname','num1','num2']
     var.set_index('gene_name_feature',drop=False,inplace=True)
@@ -42,14 +42,11 @@ if __name__ == '__main__':
             sex.append('F')
         elif x.split('-')[1] == '3':
             mouse.append('nor-3')
-            sex.append('F')
-        elif x.split('-')[1] == '4':
-            mouse.append('nor-4')
             sex.append('M')
-        elif x.split('-')[1] == '5':
+        elif x.split('-')[1] == '4':
             mouse.append('hyp-1')
             sex.append('F')
-        elif x.split('-')[1] == '6':
+        elif x.split('-')[1] == '5':
             mouse.append('hyp-2')
             sex.append('M')
     adata.obs['mouse'] = mouse
