@@ -241,7 +241,7 @@ if __name__ == "__main__":
                 "7": "Alveolar macrophage",
                 "8": "Interstitial macrophage",
                 "9": "Intermediate monocyte",
-                "10": "Imm/endo cells",
+                "10": "Imm_endo cells",
                 "11": "DC",
                 "12": "T cell",
                 "13": "Alveolar macrophage",

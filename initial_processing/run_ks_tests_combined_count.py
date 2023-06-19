@@ -25,7 +25,8 @@ if __name__ == "__main__":
     )
     hyp_deg_dict = {}
     dataset_dict = {}
-    for lineage in adata.obs["lineage"].unique():
+    # for lineage in adata.obs["lineage"].unique():
+    for lineage in ['immune','mesenchymal']:
         print(lineage)
         lin_degs = f"{deg_dir}/{lineage}"
         os.makedirs(lin_degs, exist_ok=True)
@@ -70,26 +71,25 @@ if __name__ == "__main__":
                 comp.to_excel(writer, sheet_name=ct[:31])
 
 
-        for ct in lin_adata.obs['celltype'].cat.categories:
-            print(treat)
-            print(ct)
-            ct_fp = f'{lin_degs}/cell_type_comparisons/{ct}'
-            os.makedirs(ct_fp, exist_ok=True)
-            with pd.ExcelWriter(f'{ct_fp}/{treat}.xlsx', engine="xlsxwriter") as writer:
-                ct_adata = lin_adata[lin_adata.obs['celltype'] == ct].copy()
-                for ct2 in lin_adata.obs['celltype'].cat.categories:
-                    if ct == ct2:
-                        continue
-                    else:
-                        ct2_adata = lin_adata[lin_adata.obs['celltype'] == ct2].copy()
-                        comp = anndataks_ck(ct2_adata,
-                                            ct_adata,
-                                            labels=(f'{ct2}', f'{ct}')
-                                            )
-                        comp = comp.sort_values('statistic', ascending=False)
-                        comp['gene_type'] = adata.var['gene_type']
-                        comp.to_excel(writer, sheet_name=ct2[:31])
-                writer.close()
+        # for ct in lin_adata.obs['celltype'].cat.categories:
+        #     print(ct)
+        #     ct_fp = f'{lin_degs}/cell_type_comparisons/{ct}'
+        #     os.makedirs(ct_fp, exist_ok=True)
+        #     with pd.ExcelWriter(f'{ct_fp}/{ct}_comparisons.xlsx', engine="xlsxwriter") as writer:
+        #         ct_adata = lin_adata[lin_adata.obs['celltype'] == ct].copy()
+        #         for ct2 in lin_adata.obs['celltype'].cat.categories:
+        #             if ct == ct2:
+        #                 continue
+        #             else:
+        #                 ct2_adata = lin_adata[lin_adata.obs['celltype'] == ct2].copy()
+        #                 comp = anndataks_ck(ct2_adata,
+        #                                     ct_adata,
+        #                                     labels=(f'{ct2}', f'{ct}')
+        #                                     )
+        #                 comp = comp.sort_values('statistic', ascending=False)
+        #                 comp['gene_type'] = adata.var['gene_type']
+        #                 comp.to_excel(writer, sheet_name=ct2[:31])
+        #         writer.close()
 
     with pd.ExcelWriter(
         f"{deg_dir}/cellsubtype_Hyperoxia_degs.xlsx", engine="xlsxwriter"
