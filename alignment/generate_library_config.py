@@ -35,7 +35,7 @@ if __name__ =='__main__':
     for sample in os.listdir(root_dir):
         atac_id = '_'.join(os.listdir(f'{root_dir}{sample}/atac')[0].split(".")[0].split('_')[:-4])
         rna_id  = '_'.join(os.listdir(f'{root_dir}{sample}/rna')[0].split(".")[0].split('_')[:-4])
-        write_csv(sample,root_dir,rna_id,atac_id)
+        write_csv(sample,root_dir,atac_id,rna_id)
 
 
 
