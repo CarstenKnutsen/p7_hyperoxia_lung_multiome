@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac'
 sc_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files'
+os.makedirs(figures, exist_ok=True)
 sc.set_figure_params(dpi=300, format="png")
 sc.settings.figdir = figures
 gene_dict = {
@@ -157,12 +158,11 @@ def make_dir(directory):
 if __name__ == "__main__":
     ## read in data and add obs to atac data
 
-    mdata = mu.read(f'{sc_file}/multi_all_cells_raw.h5mu')
+    mdata = mu.read(f'{sc_file}/multi_all_cells_processed.h5mu')
     ac.tl.add_peak_annotation_gene_names(mdata)
     mu.pp.intersect_obs(mdata)
     mdata.mod['atac'].obs[['lineage', 'celltype']] = mdata.mod['rna'].obs[['lineage', 'celltype']]
     atac = mdata.mod['atac']
-
     #add tf_annotations
     tf_bed = pd.read_csv(
         "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/cellranger_output/230609_aggregate/outs/analysis/tf_analysis/peak_motif_mapping.bed",
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     atac.var['annotated_gene'] = pd.Series(peak_gene_dt)
     atac.var['annotated_gene']
 
-    ## temp to add peak_type
+    ## temp to add peak_type and distance
     df = atac.uns['atac']['peak_annotation'].copy()
     print(df.columns)
     df['gene'] = df.index.copy()

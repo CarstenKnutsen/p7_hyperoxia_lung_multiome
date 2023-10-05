@@ -14,8 +14,8 @@ import time
 import json
 
 
-deg_fn = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/tissue_embedding/degs/cellsubtype_hyperoxia_degs_curated.xlsx'
-output_fol = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/metascape'
+deg_fn = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/rna/deg_ks/cellsubtype_hyperoxia_degs_curated.xlsx'
+output_fol = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/rna/metascape'
 
 def deg_to_metascape(deg_fn,
                          output_fol,

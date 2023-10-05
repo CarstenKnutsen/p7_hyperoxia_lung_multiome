@@ -15,7 +15,7 @@ sc.set_figure_params(dpi=200, format="png")
 sc.settings.figdir = figures
 
 if __name__ == "__main__":
-    adata = sc.read(f"{data}/multiome_gex_processed_cell_typed_raw.gz.h5ad")
+    adata = sc.read(f"{data}/share/p7_multiome_rna.gz.h5ad")
     adata.X = adata.X.todense()
     sc.pp.normalize_total(adata, target_sum=1e6)
     hyp_ks_stats = pd.DataFrame(
@@ -25,8 +25,7 @@ if __name__ == "__main__":
     )
     hyp_deg_dict = {}
     dataset_dict = {}
-    # for lineage in adata.obs["lineage"].unique():
-    for lineage in ['immune','mesenchymal']:
+    for lineage in adata.obs["lineage"].unique():
         print(lineage)
         lin_degs = f"{deg_dir}/{lineage}"
         os.makedirs(lin_degs, exist_ok=True)
@@ -71,29 +70,54 @@ if __name__ == "__main__":
                 comp.to_excel(writer, sheet_name=ct[:31])
 
 
-        # for ct in lin_adata.obs['celltype'].cat.categories:
-        #     print(ct)
-        #     ct_fp = f'{lin_degs}/cell_type_comparisons/{ct}'
-        #     os.makedirs(ct_fp, exist_ok=True)
-        #     with pd.ExcelWriter(f'{ct_fp}/{ct}_comparisons.xlsx', engine="xlsxwriter") as writer:
-        #         ct_adata = lin_adata[lin_adata.obs['celltype'] == ct].copy()
-        #         for ct2 in lin_adata.obs['celltype'].cat.categories:
-        #             if ct == ct2:
-        #                 continue
-        #             else:
-        #                 ct2_adata = lin_adata[lin_adata.obs['celltype'] == ct2].copy()
-        #                 comp = anndataks_ck(ct2_adata,
-        #                                     ct_adata,
-        #                                     labels=(f'{ct2}', f'{ct}')
-        #                                     )
-        #                 comp = comp.sort_values('statistic', ascending=False)
-        #                 comp['gene_type'] = adata.var['gene_type']
-        #                 comp.to_excel(writer, sheet_name=ct2[:31])
-        #         writer.close()
+        for ct in lin_adata.obs['celltype'].cat.categories:
+            print(ct)
+            ct_fp = f'{lin_degs}/cell_type_comparisons/{ct}'
+            os.makedirs(ct_fp, exist_ok=True)
+            with pd.ExcelWriter(f'{ct_fp}/{ct}_comparisons.xlsx', engine="xlsxwriter") as writer:
+                ct_adata = lin_adata[lin_adata.obs['celltype'] == ct].copy()
+                for ct2 in lin_adata.obs['celltype'].cat.categories:
+                    if ct == ct2:
+                        continue
+                    else:
+                        ct2_adata = lin_adata[lin_adata.obs['celltype'] == ct2].copy()
+                        comp = anndataks_ck(ct2_adata,
+                                            ct_adata,
+                                            labels=(f'{ct2}', f'{ct}')
+                                            )
+                        comp = comp.sort_values('statistic', ascending=False)
+                        comp['gene_type'] = adata.var['gene_type']
+                        comp.to_excel(writer, sheet_name=ct2[:31])
+                writer.close()
 
     with pd.ExcelWriter(
         f"{deg_dir}/cellsubtype_Hyperoxia_degs.xlsx", engine="xlsxwriter"
     ) as writer:
-        for key in sorted(hyp_deg_dict.keys()):
-            hyp_deg_dict[key].to_excel(writer, sheet_name=key[:31])
+        for lineage in adata.obs['lineage'].cat.categories:
+            deg_dir_lin_fn = f'{deg_dir}/{lineage}/{lineage}_cellsubtype_Hyperoxia_degs.xlsx'
+            hyper_df_dt = pd.read_excel(deg_dir_lin_fn, sheet_name=None, index_col=0, header=0)
+            for key in sorted(hyper_df_dt.keys()):
+                hyper_df_dt[key].to_excel(writer, sheet_name=key[:31])
     hyp_ks_stats.to_csv(f"{deg_dir}/Hyperoxia_deg_counts.csv")
+
+    hyper_deg_fn = f'{deg_dir}/cellsubtype_Hyperoxia_degs.xlsx'
+    final_dict = {}
+    for ct in adata.obs['celltype'].cat.categories:
+        if ct == 'Imm/endo cells':
+            ct = 'Imm_endo cells'
+        try:
+            hyper_df = pd.read_excel(hyper_deg_fn, sheet_name=ct, index_col=0, header=0)
+        except:
+            print(f'{ct} not compared')
+            continue
+        final_df = hyper_df.copy()
+        final_df = final_df.loc[(final_df['statistic'] > 0.2)
+                                # | (final_df['pvalue'] < 0.05)
+        ]
+        final_df = final_df.loc[(final_df['log2_fold_change'].abs() > 0.5)]
+        final_df = final_df.sort_values('log2_fold_change', ascending=False)
+        final_df = final_df.sort_values('statistic', ascending=False)
+        final_dict[ct] = final_df
+    with pd.ExcelWriter(f'{deg_dir}/cellsubtype_hyperoxia_degs_curated.xlsx', engine='xlsxwriter') as writer:
+        for ct in final_dict.keys():
+            final_dict[ct].to_excel(writer, sheet_name=ct[:31])

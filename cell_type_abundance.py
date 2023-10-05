@@ -1,8 +1,6 @@
-import numpy as np
-import pandas as pd
+import muon as mu
 import os
 import scanpy as sc
-import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import ticker
@@ -15,7 +13,8 @@ sc.set_figure_params(dpi=200, format="png")
 sc.settings.figdir = figures
 
 if __name__ == "__main__":
-    adata = sc.read(f"{data}/multiome_gex_processed_cell_typed_raw.gz.h5ad")
+    mudata = mu.read(f'{data}/multi_all_cells_processed.h5mu')
+    adata = mudata.mod['rna']
     adata.X = adata.X.todense()
     df = adata.obs
     df2 = df.groupby('treatment')['celltype'].value_counts(normalize=True).mul(100).rename(
@@ -38,7 +37,28 @@ if __name__ == "__main__":
         ax = plt.gca()
         ax.yaxis.set_major_formatter(ticker.ScalarFormatter())  # set regular formatting
         plt.title(f'{lineage}')
-        plt.savefig(f'{figures}/{lineage}_abunance_by_treatment.png', bbox_inches='tight')
+        plt.savefig(f'{figures}/{lineage}_abunance_by_treatment_all.png', bbox_inches='tight')
+
+        df_lin = lin_adata.obs
+        df_lin_plot = df_lin.groupby('treatment')['celltype'].value_counts(normalize=True).mul(100).rename(
+        f'% {lineage} cells sampled').reset_index()
+        df_lin_plot['celltype'] = df_lin_plot['level_1']
+        sns.catplot(data=df_lin_plot,
+                    x='celltype',
+                    y=f'% {lineage} cells sampled',
+                    hue='treatment',
+                    order=order,
+                    hue_order=['Normoxia', 'Hyperoxia'],
+                    palette=['blue','red'],
+                    kind='bar')
+        plt.xticks(rotation=90)
+        plt.yscale('log')
+        ax = plt.gca()
+        ax.yaxis.set_major_formatter(ticker.ScalarFormatter())  # set regular formatting
+        plt.title(f'{lineage}')
+        plt.savefig(f'{figures}/{lineage}_abunance_by_treatment_{lineage}.png', bbox_inches='tight')
+
+
     df2 = df.groupby('treatment')['lineage'].value_counts(normalize=True).mul(100).rename(
         '% cells sampled').reset_index()
     df2['lineage'] = df2['level_1']

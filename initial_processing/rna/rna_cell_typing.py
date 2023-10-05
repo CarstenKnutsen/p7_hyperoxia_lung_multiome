@@ -11,7 +11,7 @@ import muon as mu
 import itertools
 import anndata
 
-figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/tissue_embedding'
+figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/rna/embedding'
 sc_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files'
 os.makedirs(figures, exist_ok=True)
 sc.set_figure_params(dpi=300, dpi_save=300, format="png")
@@ -19,7 +19,7 @@ sc.settings.figdir = figures
 
 if __name__ == "__main__":
     # read in processed data
-    mudata = mu.read(f'{sc_file}/multi_all_cells_raw.h5mu')
+    mudata = mu.read(f'{sc_file}/multi_all_cells_processed.h5mu')
     adata = mudata.mod['rna']
     print(adata)
     # marker gene dicts for each lineage
@@ -186,20 +186,21 @@ if __name__ == "__main__":
             "mesenchymal": {
                 "0": "Alveolar fibroblast",
                 "1": "Alveolar fibroblast",
-                "2": "Myofibroblast",
-                "3": "Pericyte",
-                "4": "Airway smooth muscle",
+                "2": "Airway smooth muscle",
+                "3": "Myofibroblast",
+                "4": "Pericyte",
                 "5": "Mesothelial",
-                "6": "Alveolar fibroblast",
+                "6": "low-quality",
                 "7": "Alveolar fibroblast",
-                "8": "Proliferating fibroblast",
-                "9": "Adventitial fibroblast",
+                "8": "Adventitial fibroblast",
+                "9": "Proliferating fibroblast",
                 "10": "Proliferating myofibroblast",
-                "11": "EpiMT",
-                "12": "Proliferating pericyte",
-                "13": "Acta1+ mese cell",
-                "14": "Vascular smooth muscle",
-                "15": "Abberant muscle cell",
+                "11": "Proliferating pericyte",
+                "12": "Acta1+ mese cell",
+                "13": "Vascular smooth muscle",
+                "14": "Abberant muscle cell",
+                "15": "Mesothelial",
+                "16": "Airway smooth muscle",
             },
             "endothelial": {
                 "0": "Cap2",
@@ -207,10 +208,11 @@ if __name__ == "__main__":
                 "2": "Cap1",
                 "3": "Proliferating EC",
                 "4": "Arterial EC",
-                "5": "Venous EC",
-                "6": "Intermediate cap",
-                "7": "Lymphatic EC",
-                "8": "Proliferating EC",
+                "5": "Cap1",
+                "6": "Venous EC",
+                "7": "Intermediate cap",
+                "8": "Lymphatic EC",
+                "9": "Proliferating EC",
             },
             "immune": {
                 "0": "Alveolar macrophage",
@@ -226,17 +228,16 @@ if __name__ == "__main__":
 
             },
             "epithelial": {
-                "0": "AT1",
-                "1": "AT2",
+                "0": "AT2",
+                "1": "AT1",
                 "2": "AT2",
-                "3": "AT2",
-                "4": "Club",
-                "5": "Ciliated",
-                "6": "Proliferating AT2",
-                "7": "Goblet",
-                "8": "Basal",
-                "9": "Neuroendocrine",
-                "10": "AT1_AT2",
+                "3": "Club",
+                "4": "Ciliated",
+                "5": "Proliferating AT2",
+                "6": "Goblet",
+                "7": "Basal",
+                "8": "Neuroendocrine",
+                "9": "AT1_AT2",
             },
         }
         lin_adata.obs["celltype"] = (
@@ -258,6 +259,7 @@ if __name__ == "__main__":
             os.path.join(figures_lin, f"dotplot_{lineage}_leiden.png"), dpi=300
         )
         plt.clf()
+        lin_adata = lin_adata[~lin_adata.obs['celltype'].isin(['low-quality'])]
         adata.obs["celltype"].loc[lin_adata.obs.index] = lin_adata.obs[
             "celltype"
         ]
@@ -368,7 +370,14 @@ if __name__ == "__main__":
         )
     print('Done witn lineages')
     print(mudata)
-    mudata.write(f'{sc_file}/multi_all_cells_raw.h5mu')
+    adata = adata[~adata.obs['celltype'].isna()]
+    adata = adata[adata.obs['celltype'] != 'low-quality']
+    mudata.mod['rna'] = adata
+    print(sorted(adata.obs['celltype'].unique()))
+    print(mudata)
+    mudata.update()
+    print(mudata.mod['rna'].obs['celltype'].unique())
+    mudata.write(f'{sc_file}/multi_all_cells_processed.h5mu')
     sc.settings.figdir = f"{figures}/tissue_embedding"
     gene_ls = []
     for k in gene_dict.keys():
@@ -389,7 +398,7 @@ if __name__ == "__main__":
         else:
             sc.pl.umap(adata, color=gene, alpha=0.3, show = False, save=f'_{gene}')
     with pd.ExcelWriter(f'{figures}/tissue_embedding/metadata_counts.xlsx', engine='xlsxwriter') as writer:
-        obs_list = ['lineage', 'treatment','mouse']
+        obs_list = ['lineage', 'treatment','celltype','mouse']
         num_obs = len(obs_list) + 1
         for ind in range(0, num_obs):
             for subset in itertools.combinations(obs_list, ind):

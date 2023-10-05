@@ -5,13 +5,13 @@ import muon as mu
 import itertools
 import scanpy.external as sce
 
-figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/tissue_embedding'
+figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/rna/tissue_embedding'
 sc_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files'
 os.makedirs(figures, exist_ok = True)
 sc.set_figure_params(dpi = 300, dpi_save = 300, format = 'png')
 sc.settings.figdir = figures
 if __name__ == '__main__':
-    mudata = mu.read(f'{sc_file}/multi_all_cells_raw.h5mu')
+    mudata = mu.read(f'{sc_file}/multi_all_cells_processed.h5mu')
     adata = mudata.mod['rna']
     adata.layers['soupx'] = adata.X.copy()
     sc.pp.normalize_total(adata, key_added=None, target_sum=1e6)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
         elif gene == 'Col1a1':
             lineage_dict[cluster] = 'mesenchymal'
     adata.obs['lineage'] = [lineage_dict[x] for x in adata.obs['leiden']]
-    mudata.write(f'{sc_file}/multi_all_cells_raw.h5mu')
+    mudata.write(f'{sc_file}/multi_all_cells_processed.h5mu')
     adata.obs['predicted_doublet'] = adata.obs['predicted_doublet'].astype('str')
     print(adata)
     gene_dict = {

@@ -4,10 +4,9 @@ import scanpy.external as sce
 import muon as mu
 import seaborn as sns
 import matplotlib.pylab as plt
-import doubletdetection
 import numpy as np
 
-figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/qc'
+figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/rna/qc'
 sc_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files'
 os.makedirs(figures, exist_ok = True)
 sc.set_figure_params(dpi = 300, format = 'png')
@@ -19,7 +18,9 @@ if __name__ == '__main__':
     print(mudata)
     adata = mudata.mod['rna']
     adata.var['seqname'] = [x[0] for x in adata.var['interval'].str.split(':')]
-    adata = adata[:,adata.var['seqname']!='chrM']
+    adata = adata[:,~adata.var['seqname'].isin(['chrM'])] #some mito genes not annotated with chromosome thus NA
+    print(adata)
+    adata = adata[:, ~adata.var['seqname'].isin(['chrM', 'NA'])] #some mito genes not annotated with chromosome thus NA
     print(adata)
     sc.pp.calculate_qc_metrics(adata, expr_type='umis', percent_top=None, log1p=False, inplace=True)
     mu.pp.filter_obs(adata, 'total_umis', lambda x: x >= 1)
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     mudata.update()
     print(mudata)
 
-    mudata.write(f'{sc_file}/multi_all_cells_raw.h5mu')
+    mudata.write(f'{sc_file}/multi_all_cells_processed.h5mu')
     sns.jointplot(
         data=adata.obs,
         x="log10_total_umis",
