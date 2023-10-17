@@ -130,6 +130,55 @@ if __name__ == "__main__":
                     print(ct)
                     print('no hyperoxia comparison')
                     continue
+    gene_dict = {}
+    for direction in ['up', 'down']:
+        gene_dict[direction] = {}
+        gene_dict[direction]['celltypes'] = {}
+        for ct in adata_tf.obs['celltype'].cat.categories:
+            df = hyp_deg_dict[ct]
+            df = df.loc[(df['pvals_adj'] <0.05)|
+                        (abs(df['scores']) > 1)]
+
+            if direction == 'up':
+                df = df.loc[df['logfoldchanges'] > 0]
+            else:
+                df = df.loc[df['logfoldchanges'] < 0]
+            gene_ls = df.index.tolist()
+            for gene in gene_ls:
+                if gene in gene_dict[direction]['celltypes'].keys():
+                    gene_dict[direction]['celltypes'][gene].append(ct)
+                else:
+                    gene_dict[direction]['celltypes'][gene] = [ct]
+
+        gene_dict[direction]['number_cts'] = {}
+        for gene in gene_dict[direction]['celltypes'].keys():
+            gene_dict[direction]['number_cts'][gene] = len(gene_dict[direction]['celltypes'][gene])
+    gene_dict_lin = {}
+    for lineage in adata_tf.obs['lineage'].cat.categories:
+        gene_dict_lin[lineage] = {}
+        lin_adata = adata_tf[adata_tf.obs['lineage'] == lineage]
+        for direction in ['up', 'down']:
+            gene_dict_lin[lineage][direction] = {}
+            gene_dict_lin[lineage][direction]['celltypes'] = {}
+            for ct in lin_adata.obs['celltype'].cat.categories:
+                df = hyp_deg_dict[ct]
+                df = df.loc[(df['pvals_adj'] < 0.05) |
+                            (abs(df['scores']) > 1)]
+                if direction == 'up':
+                    df = df.loc[df['logfoldchanges'] > 0]
+                else:
+                    df = df.loc[df['logfoldchanges'] < 0]
+                gene_ls = df.index.tolist()
+                for gene in gene_ls:
+                    if gene in gene_dict_lin[lineage][direction]['celltypes'].keys():
+                        gene_dict_lin[lineage][direction]['celltypes'][gene].append(ct)
+                    else:
+                        gene_dict_lin[lineage][direction]['celltypes'][gene] = [ct]
+            gene_dict_lin[lineage][direction]['number_cts'] = {}
+            for gene in gene_dict_lin[lineage][direction]['celltypes'].keys():
+                gene_dict_lin[lineage][direction]['number_cts'][gene] = len(
+                    gene_dict_lin[lineage][direction]['celltypes'][gene])
+
     with pd.ExcelWriter(
             f"{deg_dir}/hyperoxia_datf_all.xlsx", engine="xlsxwriter"
     ) as writer:
@@ -138,4 +187,26 @@ if __name__ == "__main__":
                 hyp_deg_dict[ct].to_excel(writer, sheet_name=f"{ct}")
             except:
                 print(ct)
+    lin_ct_dict = {}
+    for ct in adata_tf.obs['celltype'].cat.categories:
+        lin_ct_dict[ct] = adata_tf[adata_tf.obs['celltype'] == ct].obs['lineage'].unique()[0]
+    with pd.ExcelWriter(
+            f"{deg_dir}/hyperoxia_datf_curated.xlsx", engine="xlsxwriter"
+    ) as writer:
+        for ct in adata_tf.obs['celltype'].cat.categories:
+            lin = lin_ct_dict[ct]
+            df = hyp_deg_dict[ct]
+            df = df.loc[(df['pvals_adj'] < 0.05) |
+                        (abs(df['scores']) > 1)]
+            df['number_ct_up'] = pd.Series({k: gene_dict['up']['number_cts'].get(k, 0) for k in df.index})
+            df['number_ct_down'] = pd.Series({k: gene_dict['down']['number_cts'].get(k, 0) for k in df.index})
+            df[f'number_{lin}_ct_up'] = pd.Series(
+                {k: gene_dict_lin[lin]['up']['number_cts'].get(k, 0) for k in df.index})
+            df[f'number_{lin}_ct_down'] = pd.Series(
+                {k: gene_dict_lin[lin]['down']['number_cts'].get(k, 0) for k in df.index})
+            df['cts_up'] = pd.Series({k: gene_dict['up']['celltypes'].get(k, 0) for k in df.index})
+            df['cts_down'] = pd.Series({k: gene_dict['down']['celltypes'].get(k, 0) for k in df.index})
+            df = df.sort_values('scores', ascending=False)
+            df.to_excel(writer, sheet_name=ct[:31])
+
     print('DONE!')
