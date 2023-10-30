@@ -36,8 +36,10 @@ if __name__ == "__main__":
         da_lin_hyp_output = f'{da_lin_output}/hyperoxia'
         os.makedirs(da_lin_hyp_output, exist_ok=True)
         for ct in sorted(lin_adata.obs['celltype'].unique()):
-            ct_norm = lin_adata[lin_adata.obs['treatment']=='Normoxia']
-            ct_hyper = lin_adata[lin_adata.obs['treatment']=='Hyperoxia']
+            print(ct)
+            ct_adata = lin_adata[lin_adata.obs['celltype']==ct]
+            ct_norm = ct_adata[ct_adata.obs['treatment']=='Normoxia']
+            ct_hyper = ct_adata[ct_adata.obs['treatment']=='Hyperoxia']
             if len(ct_norm.obs_names) <10 or len(ct_hyper.obs_names) <10:
                 print(ct)
                 print('Too few cells')
