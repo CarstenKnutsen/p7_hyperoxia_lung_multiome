@@ -15,11 +15,11 @@ import os
 
 figures = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2'
 sc_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files'
-fragment_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/cellranger_output/230609_aggregate/outs/atac_fragments.tsv.gz'
+fragment_file = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/cellranger_output/231101_aggregate_normalized/outs/atac_fragments.tsv.gz'
 gtf = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/refdata-cellranger-arc-mm10-2020-A-2.0.0/genes/genes.gtf'
 chrom_sizes_fn = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/refdata-cellranger-arc-mm10-2020-A-2.0.0/sizes.genome'
 genome = '/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/refdata-cellranger-arc-mm10-2020-A-2.0.0/fasta/genome.fa'
-output_f = f'{sc_file}/multiome_snapatac_pilot.h5ad'
+output_f = f'{sc_file}/snapatac2_tile_matrix.h5ad'
 obs_list = ['lineage','celltype','treatment','mouse','sex']
 os.makedirs(figures, exist_ok=True)
 sc.set_figure_params(dpi=300, format="png")
@@ -55,9 +55,22 @@ if __name__ == "__main__":
     snap.tl.macs3(data, groupby='celltype')
     peaks = snap.tl.merge_peaks(data.uns['macs3'], chrom_sizes)
     peaks.to_pandas().to_csv(f'{figures}/peaks_df.csv')
+    peaks_bed = pd.DataFrame(index=peaks['Peaks'])
+    peaks_bed['chr'] = peaks_bed.index.str.split(':').str[0]
+    peaks_bed['loc1'] = peaks_bed.index.str.split(':').str[1].astype('str').str.split('-').str[0]
+    peaks_bed['loc2'] = peaks_bed.index.str.split(':').str[1].astype('str').str.split('-').str[1]
+    peaks_bed['strand'] = '.'
+    peaks_bed.to_csv(f'{figures}/all_peaks.bed', sep='\t', header=None)
     peak_matrix = snap.pp.make_peak_matrix(data, use_rep=peaks['Peaks'])
     peak_matrix.write(f"{sc_file}/snapatac2_peak_matrix.gz.h5ad", compression='gzip')
     gene_matrix = snap.pp.make_gene_matrix(data, gtf)
+    data.obs['treatment_celltype'] = data.obs['treatment'] + '_' + data.obs['celltype']
+    bed_files = f'{figures}/celltype_bed'
+    os.makedirs(bed_files, exist_ok=True)
+    snap.ex.export_bed(data,
+                             groupby='treatment_celltype',
+                             out_dir = bed_files,
+                             )
     data.close()
     sc.pp.filter_genes(gene_matrix, min_cells=5)
     sc.pp.normalize_total(gene_matrix, key_added=None, target_sum=1e6)
