@@ -12,11 +12,11 @@ import pandas as pd
 import snapatac2 as snap
 import os
 
-da_output = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2/dap_datf"
+da_output = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2_no_nor3/dap_datf_tile"
 sc_file = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/single_cell_files"
 genome = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/refdata-cellranger-arc-mm10-2020-A-2.0.0/fasta/genome.fa"
-peaks_fn = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2/peaks_df.csv"
-peak_md_fn = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2/peak_homer_annotation.txt"
+peaks_fn = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2_no_nor3/peaks_df.csv"
+peak_md_fn = "/home/carsten/alvira_bioinformatics/postnatal_lung_multiome/data/figures/atac/snapatac2_no_nor3/peak_homer_annotation.txt"
 peak_md_cols = [
     "Chr",
     "Start",
@@ -32,7 +32,7 @@ os.makedirs(da_output, exist_ok=True)
 
 
 if __name__ == "__main__":
-    adata_peak = sc.read(f"{sc_file}/snapatac2_peak_matrix.gz.h5ad")
+    adata_peak = sc.read(f"{sc_file}/snapatac2_tile_matrix_no_nor3.h5ad")
     print(adata_peak)
     peak_md = pd.read_csv(peak_md_fn, sep="\t", index_col=0)
     peaks = pd.read_csv(peaks_fn, header=0, index_col=0)
@@ -50,7 +50,8 @@ if __name__ == "__main__":
             ct_adata = lin_adata[lin_adata.obs["celltype"] == ct]
             ct_norm = ct_adata[ct_adata.obs["treatment"] == "Normoxia"]
             ct_hyper = ct_adata[ct_adata.obs["treatment"] == "Hyperoxia"]
-            ct_peaks = peaks[peaks[ct] == True]["Peaks"].values
+            ct_peaks = peaks[(peaks[f'Normoxia_{ct}'] == True)|
+            (peaks[f'Hyperoxia_{ct}'] == True)]["Peaks"].values
             if len(ct_norm.obs_names) < 10 or len(ct_hyper.obs_names) < 10:
                 print(ct)
                 print("Too few cells")
@@ -61,7 +62,7 @@ if __name__ == "__main__":
             diff_df_pd = diff_df.to_pandas()
             diff_df_pd.index = diff_df_pd["feature name"]
             diff_df_pd = diff_df_pd[diff_df_pd.columns.tolist()[1:]]
-            diff_df_pd[peak_md_cols] = peak_md.loc[diff_df_pd.index][peak_md_cols]
+            # diff_df_pd[peak_md_cols] = peak_md.loc[diff_df_pd.index][peak_md_cols]
             diff_df_pd.to_csv(f"{da_lin_hyp_output}/{ct}_hyperoxia_dap.csv")
             diff_df_pd_t = diff_df_pd.loc[diff_df_pd["adjusted p-value"] < 0.05]
             diff_df_pd_t = diff_df_pd_t.loc[
